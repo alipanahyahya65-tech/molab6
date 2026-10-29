@@ -1,0 +1,415 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>مدل تعاملی مکعب ۴×۴×۴ فضایی</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #0f172a;
+            font-family: Tahoma, Arial, sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 14px 10px;
+        }
+
+        h1 {
+            color: #facc15;
+            font-size: 20px;
+            margin: 4px 0 6px 0;
+            text-align: center;
+        }
+
+        .desc {
+            font-size: 13px;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        button {
+            border: none;
+            border-radius: 8px;
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 3px;
+            transition: transform 0.15s, filter 0.15s, box-shadow 0.15s;
+        }
+
+        button small {
+            font-size: 11px;
+            font-weight: normal;
+        }
+
+        button:hover {
+            filter: brightness(1.15);
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: scale(0.96);
+        }
+
+        .b-1 { background: #06b6d4; color: #083344; }
+        .b-2 { background: #f97316; color: #431407; }
+        .b-3 { background: #ef4444; color: #ffffff; }
+        .b-reset { background: #e2e8f0; color: #1e293b; }
+        .b-music { background: #8b5cf6; color: #ffffff; }
+
+        .btn-active {
+            box-shadow: 0 0 0 3px #facc15, 0 4px 12px rgba(250, 204, 21, 0.4);
+        }
+
+        #info {
+            min-height: 40px;
+            padding: 6px 18px;
+            border-radius: 20px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            color: #facc15;
+            font-size: 13.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        #info b {
+            color: #38bdf8;
+            margin: 0 4px;
+        }
+
+        .scene-box {
+            position: relative;
+            width: 360px;
+            max-width: 92vw;
+            height: 360px;
+            max-height: 52vh;
+            border-radius: 16px;
+            background: #020617;
+            border: 1px solid #1e293b;
+            overflow: hidden;
+            touch-action: none;
+            cursor: grab;
+        }
+
+        .scene-box:active {
+            cursor: grabbing;
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            pointer-events: none;
+        }
+
+        .watermark {
+            margin-top: 10px;
+            color: #64748b;
+            font-size: 12px;
+        }
+
+        /* دکمه موسیقی کوچک در کنار دکمه‌ها */
+        .music-btn {
+            background: #8b5cf6;
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .music-btn:hover {
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>شمارش مکعب‌های رنگی ۴×۴×۴</h1>
+    <div class="desc">
+        مکعب از ۶۴ مکعب کوچک سفید ساخته شده و پوسته خارجی آن قرمز رنگ است.
+    </div>
+
+    <div class="buttons">
+        <button class="b-1" id="btn1" onclick="setMode(1)">
+            مکعب با یک وجه رنگی
+            <small>۲۴ عدد (۶ × ۴)</small>
+        </button>
+        <button class="b-2" id="btn2" onclick="setMode(2)">
+            مکعب با دو وجه رنگی
+            <small>۲۴ عدد (۱۲ × ۲)</small>
+        </button>
+        <button class="b-3" id="btn3" onclick="setMode(3)">
+            مکعب با سه وجه رنگی
+            <small>۸ عدد (۸ × ۱)</small>
+        </button>
+        <button class="b-reset" id="btnReset" onclick="setMode(0)">
+            حالت اولیه
+            <small>مکعب کامل</small>
+        </button>
+        <!-- دکمه موسیقی -->
+        <button class="music-btn" id="musicToggle">🎵 پخش موسیقی</button>
+    </div>
+
+    <div id="info">روی یکی از گزینه‌ها کلیک کنید یا با درگ، مکعب را بچرخانید.</div>
+
+    <div class="scene-box" id="box">
+        <div class="hint">↻ با ماوس یا لمس، مکعب را ۳۶۰ درجه بچرخانید</div>
+    </div>
+
+    <div class="watermark">طراح : علی پناه</div>
+
+    <!-- عنصر صوتی مخفی -->
+    <audio id="bgMusic" src="https://dl.aleftab.ir/download/Music/b_aleftab.ir%20_3_.MP3" preload="metadata"></audio>
+
+    <script>
+        // -------- مدیریت موسیقی --------
+        const audio = document.getElementById('bgMusic');
+        const musicBtn = document.getElementById('musicToggle');
+        let isMusicPlaying = false;
+
+        musicBtn.addEventListener('click', function() {
+            if (isMusicPlaying) {
+                audio.pause();
+                musicBtn.textContent = '🎵 پخش موسیقی';
+                isMusicPlaying = false;
+            } else {
+                audio.play().catch(e => console.warn('پخش خودکار ممکن نیست:', e));
+                musicBtn.textContent = '⏸️ توقف موسیقی';
+                isMusicPlaying = true;
+            }
+        });
+
+        // در صورت پایان آهنگ، دکمه را ریست کن
+        audio.addEventListener('ended', function() {
+            musicBtn.textContent = '🎵 پخش موسیقی';
+            isMusicPlaying = false;
+        });
+
+        // -------- Three.js و بقیه کد --------
+        const container = document.getElementById('box');
+        const info = document.getElementById('info');
+
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(0, 0, 9.5);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.65);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.75);
+        dirLight.position.set(5, 8, 7);
+        scene.add(dirLight);
+
+        const mainGroup = new THREE.Group();
+        scene.add(mainGroup);
+
+        const matRed = new THREE.MeshLambertMaterial({ color: 0xef4444 });
+        const matWhite = new THREE.MeshLambertMaterial({ color: 0xf1f5f9 });
+        const edgeMaterialDefault = new THREE.LineBasicMaterial({ color: 0x334155, linewidth: 1 });
+        const edgeMaterialSelected = new THREE.LineBasicMaterial({ color: 0xfacc15, linewidth: 2 });
+
+        const cubesData = [];
+        const cubeSize = 1.0;
+        const boxGeo = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+        const edgesGeo = new THREE.EdgesGeometry(boxGeo);
+
+        // فاصله کمتر برای حالت دو وجه رنگی (از 0.8 به 0.3 کاهش داده شد)
+        const explodeOffset = cubeSize * 0.3;
+
+        for (let x = 0; x < 4; x++) {
+            for (let y = 0; y < 4; y++) {
+                for (let z = 0; z < 4; z++) {
+                    const bx = (x - 1.5) * cubeSize;
+                    const by = (y - 1.5) * cubeSize;
+                    const bz = (z - 1.5) * cubeSize;
+
+                    const isR = (x === 3);
+                    const isL = (x === 0);
+                    const isT = (y === 3);
+                    const isB = (y === 0);
+                    const isF = (z === 3);
+                    const isK = (z === 0);
+
+                    let coloredCount = 0;
+                    if (isR) coloredCount++;
+                    if (isL) coloredCount++;
+                    if (isT) coloredCount++;
+                    if (isB) coloredCount++;
+                    if (isF) coloredCount++;
+                    if (isK) coloredCount++;
+
+                    const faceMaterials = [
+                        isR ? matRed : matWhite,
+                        isL ? matRed : matWhite,
+                        isT ? matRed : matWhite,
+                        isB ? matRed : matWhite,
+                        isF ? matRed : matWhite,
+                        isK ? matRed : matWhite
+                    ];
+
+                    const cubeMesh = new THREE.Mesh(boxGeo, faceMaterials);
+                    const lineEdge = new THREE.LineSegments(edgesGeo, edgeMaterialDefault);
+                    cubeMesh.add(lineEdge);
+
+                    cubeMesh.position.set(bx, by, bz);
+                    mainGroup.add(cubeMesh);
+
+                    let dx = 0, dy = 0, dz = 0;
+                    if (isR) dx = 1;
+                    if (isL) dx = -1;
+                    if (isT) dy = 1;
+                    if (isB) dy = -1;
+                    if (isF) dz = 1;
+                    if (isK) dz = -1;
+
+                    cubesData.push({
+                        mesh: cubeMesh,
+                        edge: lineEdge,
+                        basePos: new THREE.Vector3(bx, by, bz),
+                        targetPos: new THREE.Vector3(bx, by, bz),
+                        dir: new THREE.Vector3(dx, dy, dz),
+                        colored: coloredCount
+                    });
+                }
+            }
+        }
+
+        mainGroup.rotation.x = 0.45;
+        mainGroup.rotation.y = -0.65;
+
+        function setMode(m) {
+            document.querySelectorAll('.buttons button').forEach(b => b.classList.remove('btn-active'));
+            if (m === 1) document.getElementById('btn1').classList.add('btn-active');
+            if (m === 2) document.getElementById('btn2').classList.add('btn-active');
+            if (m === 3) document.getElementById('btn3').classList.add('btn-active');
+            if (m === 0) document.getElementById('btnReset').classList.add('btn-active');
+
+            let count = 0;
+            cubesData.forEach(c => {
+                if (m > 0 && c.colored === m) {
+                    c.targetPos.copy(c.basePos).addScaledVector(c.dir, explodeOffset);
+                    c.edge.material = edgeMaterialSelected;
+                    count++;
+                } else {
+                    c.targetPos.copy(c.basePos);
+                    c.edge.material = edgeMaterialDefault;
+                }
+            });
+
+            if (m === 1) {
+                info.innerHTML = `مکعب با یک وجه رنگی: <b>${count} عدد</b> (۴ تا در مرکز هر یک از ۶ وجه)`;
+            } else if (m === 2) {
+                info.innerHTML = `مکعب با دو وجه رنگی: <b>${count} عدد</b> (۲ تا روی هر یک از ۱۲ یال) — فاصله کاهش یافته`;
+            } else if (m === 3) {
+                info.innerHTML = `مکعب با سه وجه رنگی: <b>${count} عدد</b> (۱ تا در هر یک از ۸ رأس)`;
+            } else {
+                info.innerHTML = `مکعب کامل بازنشانی شد (شامل کل ۶۴ مکعب)`;
+            }
+        }
+
+        let isDragging = false;
+        let prevMousePos = { x: 0, y: 0 };
+        let targetRotX = 0.45;
+        let targetRotY = -0.65;
+
+        function onPointerDown(e) {
+            isDragging = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            prevMousePos = { x: clientX, y: clientY };
+        }
+
+        function onPointerMove(e) {
+            if (!isDragging) return;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const deltaX = clientX - prevMousePos.x;
+            const deltaY = clientY - prevMousePos.y;
+            targetRotY += deltaX * 0.008;
+            targetRotX += deltaY * 0.008;
+            targetRotX = Math.max(-1.4, Math.min(1.4, targetRotX));
+            prevMousePos = { x: clientX, y: clientY };
+        }
+
+        function onPointerUp() {
+            isDragging = false;
+        }
+
+        container.addEventListener('mousedown', onPointerDown);
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', onPointerUp);
+
+        container.addEventListener('touchstart', onPointerDown, { passive: true });
+        window.addEventListener('touchmove', onPointerMove, { passive: true });
+        window.addEventListener('touchend', onPointerUp);
+
+        window.addEventListener('resize', () => {
+            const w = container.clientWidth;
+            const h = container.clientHeight;
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+            renderer.setSize(w, h);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            mainGroup.rotation.x += (targetRotX - mainGroup.rotation.x) * 0.1;
+            mainGroup.rotation.y += (targetRotY - mainGroup.rotation.y) * 0.1;
+
+            cubesData.forEach(c => {
+                c.mesh.position.lerp(c.targetPos, 0.04);
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
